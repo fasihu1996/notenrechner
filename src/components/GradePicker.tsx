@@ -71,16 +71,16 @@ export default function GradePicker({
           </CardTitle>
           <div className='flex flex-shrink-0 flex-wrap gap-1 sm:gap-2'>
             <Badge variant='secondary' className='text-xs'>
-              {course.ects} ECTS
+              {course.credits} ECTS
             </Badge>
             <Badge variant='outline' className='text-xs'>
-              {course.weight}%
+              {course.weight}x
             </Badge>
             <Badge
               variant={course.graded ? "default" : "destructive"}
               className='text-xs'
             >
-              {course.graded ? "Graded" : "Pass/Fail"}
+              {course.graded ? "B" : "U"}
             </Badge>
           </div>
         </div>
