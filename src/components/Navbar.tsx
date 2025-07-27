@@ -3,8 +3,8 @@ import React from "react";
 import ModeToggle from "./ModeToggle";
 import { createClient } from "@/utils/supabase/server";
 import LogoutButton from "./LogoutButton";
-import { LogIn } from "lucide-react";
 import { Button } from "./ui/button";
+import { LogIn } from "lucide-react";
 
 async function Navbar() {
   const supabase = await createClient();
@@ -14,35 +14,36 @@ async function Navbar() {
 
   return (
     <nav className='bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur'>
-      <div className='flex h-16 items-center justify-between px-4'>
+      <div className='flex h-12 items-center justify-between px-2 sm:h-16 sm:px-4'>
         <div className='flex items-center'>
           <Link
             href='/'
-            className='text-primary p-4 font-mono text-3xl font-bold tracking-wider'
+            className='text-primary p-2 font-mono text-lg font-bold tracking-wider sm:p-4 sm:text-2xl lg:text-3xl'
           >
             Notenrechner
           </Link>
         </div>
-        <div className='ml-auto flex items-center justify-end space-x-4'>
+        <div className='ml-auto flex items-center justify-end space-x-1 sm:space-x-4'>
           {user ? (
             // User is logged in
             <>
-              <span className='text-primary p-4 font-mono text-lg font-medium'>
+              <span className='text-primary max-w-32 truncate p-1 font-mono text-xs font-medium sm:max-w-none sm:p-4 sm:text-sm lg:text-lg'>
                 {user.email}
               </span>
               <LogoutButton />
             </>
           ) : (
             // User is not logged in
-            <>
-              <Button
-                variant='outline'
-                href='/login'
-                className='text-primary hover:text-primary/80 bg-accent p-4 font-mono text-xl font-bold tracking-wider transition-colors'
-              >
+            <Button
+              variant='outline'
+              size='sm'
+              asChild
+              className='h-10 text-xs sm:h-10 sm:text-sm'
+            >
+              <Link href='/login'>
                 <LogIn />
-              </Button>
-            </>
+              </Link>
+            </Button>
           )}
           <ModeToggle />
         </div>

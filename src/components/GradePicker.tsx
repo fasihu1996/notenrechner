@@ -52,41 +52,65 @@ export default function GradePicker({
 
   return (
     <Card className='w-full'>
-      <CardHeader className='pb-3'>
-        <div className='flex items-start justify-between gap-4'>
-          <CardTitle className='text-lg font-semibold'>
+      <CardHeader className='pb-2 sm:pb-3'>
+        <div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
+          <CardTitle className='text-sm leading-tight font-semibold sm:text-base lg:text-lg'>
             {course.title}
           </CardTitle>
-          <div className='flex flex-shrink-0 gap-2'>
-            <Badge variant='secondary'>{course.credits} ECTS</Badge>
-            <Badge variant='outline'>Gewichtung: {course.weight}x</Badge>
-            <Badge variant={course.graded ? "default" : "destructive"}>
-              {course.graded ? "Benotet" : "Unbenotet"}
+          <div className='flex flex-shrink-0 flex-wrap gap-1 sm:gap-2'>
+            <Badge variant='secondary' className='text-xs'>
+              {course.ects} ECTS
+            </Badge>
+            <Badge variant='outline' className='text-xs'>
+              {course.weight}%
+            </Badge>
+            <Badge
+              variant={course.graded ? "default" : "destructive"}
+              className='text-xs'
+            >
+              {course.graded ? "Graded" : "Pass/Fail"}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className='pt-0'>
         <div className='space-y-2'>
           <label
             htmlFor={`grade-${course.id}`}
-            className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+            className='text-xs leading-none font-medium sm:text-sm'
           >
-            {course.graded ? "Note auswählen" : "Ergebnis auswählen"}
+            {course.graded ? "Select Grade" : "Select Result"}
           </label>
           <Select value={selectedGrade} onValueChange={handleGradeChange}>
-            <SelectTrigger id={`grade-${course.id}`}>
+            <SelectTrigger
+              id={`grade-${course.id}`}
+              className='h-8 text-xs sm:h-9 sm:text-sm'
+            >
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  className='text-xs sm:text-sm'
+                >
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+        {selectedGrade && (
+          <div className='bg-muted mt-2 rounded-md p-2 sm:mt-3'>
+            <p className='text-muted-foreground text-xs'>
+              {course.graded ? "Selected Grade:" : "Selected Result:"}{" "}
+              <span className='font-medium'>
+                {options.find((opt) => opt.value === selectedGrade)?.label}
+              </span>
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
