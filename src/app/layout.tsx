@@ -19,17 +19,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <body className={space.className}>
         <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
+          attribute='class'
+          defaultTheme='light'
           disableTransitionOnChange
         >
           <AuthProvider>
             <Navbar />
             {children}
-            <Toaster position="top-right" richColors closeButton />
+            <Toaster position='top-right' richColors closeButton />
           </AuthProvider>
         </ThemeProvider>
       </body>
