@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -22,6 +22,22 @@ export default function GradePicker({
   onGradeChange,
 }: GradePickerProps) {
   const [selectedGrade, setSelectedGrade] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        ) || window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleGradeChange = (value: string) => {
     setSelectedGrade(value);
@@ -29,14 +45,10 @@ export default function GradePicker({
     let gradeNumber: number | null = null;
 
     if (course.graded) {
-      // For graded courses, use the actual grade value
       gradeNumber = value ? parseFloat(value) : null;
     } else {
-      // For pass/fail courses, convert to numeric values
-      // Pass = 4.0 (minimum passing grade), Fail = 5.0 (failing grade)
-      // Or you might want to exclude pass/fail courses from GPA calculation entirely
       if (value === "pass") {
-        gradeNumber = 1.0; // or null if you don't want to include in GPA
+        gradeNumber = 1.0;
       } else if (value === "fail") {
         gradeNumber = null;
       }
@@ -47,8 +59,8 @@ export default function GradePicker({
 
   const options = course.graded ? grades : passFail;
   const placeholder = course.graded
-    ? "Wähle eine Note..."
-    : "Wähle Bestanden/Nicht bestanden...";
+    ? "Note..."
+    : "Bestanden/Nicht bestanden...";
 
   return (
     <Card className='w-full'>
@@ -81,26 +93,49 @@ export default function GradePicker({
           >
             {course.graded ? "Select Grade" : "Select Result"}
           </label>
-          <Select value={selectedGrade} onValueChange={handleGradeChange}>
-            <SelectTrigger
+
+          {/* Conditional rendering based on device type */}
+          {isMobile ? (
+            // Native select for mobile
+            <select
               id={`grade-${course.id}`}
-              className='h-8 text-xs sm:h-9 sm:text-sm'
+              value={selectedGrade}
+              onChange={(e) => handleGradeChange(e.target.value)}
+              className='bg-background border-input focus:ring-ring h-10 w-full appearance-none rounded-md border bg-[length:1rem] bg-right bg-no-repeat px-3 py-2 pr-8 text-sm shadow-sm focus:border-transparent focus:ring-2 focus:outline-none'
             >
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
+              <option value='' disabled>
+                {placeholder}
+              </option>
               {options.map((option) => (
-                <SelectItem
-                  key={option.value}
-                  value={option.value}
-                  className='text-xs sm:text-sm'
-                >
+                <option key={option.value} value={option.value}>
                   {option.label}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+            </select>
+          ) : (
+            // Custom Radix UI Select for desktop
+            <Select value={selectedGrade} onValueChange={handleGradeChange}>
+              <SelectTrigger
+                id={`grade-${course.id}`}
+                className='h-8 text-xs sm:h-9 sm:text-sm'
+              >
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className='text-xs sm:text-sm'
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
+
         {selectedGrade && (
           <div className='bg-muted mt-2 rounded-md p-2 sm:mt-3'>
             <p className='text-muted-foreground text-xs'>
