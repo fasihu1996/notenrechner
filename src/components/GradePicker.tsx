@@ -63,33 +63,33 @@ export default function GradePicker({
     : "Bestanden/Nicht bestanden...";
 
   return (
-    <Card className='w-full'>
-      <CardHeader className='pb-2 sm:pb-3'>
-        <div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
-          <CardTitle className='text-sm leading-tight font-semibold sm:text-base lg:text-lg'>
+    <Card className="w-full">
+      <CardHeader className="pb-2 sm:pb-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <CardTitle className="text-sm leading-tight font-semibold sm:text-base lg:text-lg">
             {course.title}
           </CardTitle>
-          <div className='flex flex-shrink-0 flex-wrap gap-1 sm:gap-2'>
-            <Badge variant='secondary' className='text-xs'>
+          <div className="flex flex-shrink-0 flex-wrap gap-1 sm:gap-2">
+            <Badge variant="secondary" className="text-xs">
               {course.credits} ECTS
             </Badge>
-            <Badge variant='outline' className='text-xs'>
+            <Badge variant="outline" className="text-xs">
               {course.weight}x
             </Badge>
             <Badge
               variant={course.graded ? "default" : "destructive"}
-              className='text-xs'
+              className="text-xs"
             >
               {course.graded ? "B" : "U"}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className='pt-0'>
-        <div className='space-y-2'>
+      <CardContent className="pt-0">
+        <div className="space-y-2">
           <label
             htmlFor={`grade-${course.id}`}
-            className='text-xs leading-none font-medium sm:text-sm'
+            className="text-xs leading-none font-medium sm:text-sm"
           >
             {course.graded ? "Select Grade" : "Select Result"}
           </label>
@@ -101,9 +101,9 @@ export default function GradePicker({
               id={`grade-${course.id}`}
               value={selectedGrade}
               onChange={(e) => handleGradeChange(e.target.value)}
-              className='bg-background border-input focus:ring-ring h-10 w-full appearance-none rounded-md border bg-[length:1rem] bg-right bg-no-repeat px-3 py-2 pr-8 text-sm shadow-sm focus:border-transparent focus:ring-2 focus:outline-none'
+              className="bg-background border-input focus:ring-ring h-10 w-full appearance-none rounded-md border bg-[length:1rem] bg-right bg-no-repeat px-3 py-2 pr-8 text-sm shadow-sm focus:border-transparent focus:ring-2 focus:outline-none"
             >
-              <option value='' disabled>
+              <option value="" disabled>
                 {placeholder}
               </option>
               {options.map((option) => (
@@ -117,7 +117,7 @@ export default function GradePicker({
             <Select value={selectedGrade} onValueChange={handleGradeChange}>
               <SelectTrigger
                 id={`grade-${course.id}`}
-                className='h-8 text-xs sm:h-9 sm:text-sm'
+                className="h-8 text-xs sm:h-9 sm:text-sm"
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
@@ -126,7 +126,7 @@ export default function GradePicker({
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    className='text-xs sm:text-sm'
+                    className="text-xs sm:text-sm"
                   >
                     {option.label}
                   </SelectItem>
@@ -137,10 +137,10 @@ export default function GradePicker({
         </div>
 
         {selectedGrade && (
-          <div className='bg-muted mt-2 rounded-md p-2 sm:mt-3'>
-            <p className='text-muted-foreground text-xs'>
+          <div className="bg-muted mt-2 rounded-md p-2 sm:mt-3">
+            <p className="text-muted-foreground text-xs">
               {course.graded ? "Selected Grade:" : "Selected Result:"}{" "}
-              <span className='font-medium'>
+              <span className="font-medium">
                 {options.find((opt) => opt.value === selectedGrade)?.label}
               </span>
             </p>

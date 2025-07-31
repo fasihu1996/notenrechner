@@ -9,14 +9,14 @@ export default function ModeToggle() {
 
   return (
     <Button
-      variant='default'
-      size='icon'
+      variant="default"
+      size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className='cursor-pointer'
+      className="cursor-pointer"
     >
-      <SunIcon className='h-[1.2rem] w-[1.2rem] scale-0 rotate-0 transition-all dark:scale-100' />
-      <MoonIcon className='absolute h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:rotate-0' />
-      <span className='sr-only'>Toggle theme</span>
+      <SunIcon className="h-[1.2rem] w-[1.2rem] scale-0 rotate-0 transition-all dark:scale-100" />
+      <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:rotate-0" />
+      <span className="sr-only">Toggle theme</span>
     </Button>
   );
 }
