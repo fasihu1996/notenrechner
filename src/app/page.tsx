@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Plus, Minus, Calculator } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Course } from "@/types/course";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Home() {
   const [supabase] = useState(() => createClient());
@@ -15,6 +17,7 @@ export default function Home() {
   const [selectedGrades, setSelectedGrades] = useState<Record<string, number>>(
     {},
   );
+  const [calcWithCredits, setCalcWithCredits] = useState(false);
 
   // Fetch courses on component mount
   useEffect(() => {
@@ -46,19 +49,24 @@ export default function Home() {
     courses.forEach((course) => {
       const grade = selectedGrades[course.id];
       if (grade !== undefined && grade !== null) {
-        const weight = course.weight || 1; // Default weight to 1 if not specified
-        totalWeightedGrades += grade * weight;
-        totalWeights += weight;
+        if (!calcWithCredits) {
+          const weight = course.weight || 1; // Default weight to 1 if not specified
+          totalWeightedGrades += grade * weight;
+          totalWeights += weight;
+        } else {
+          const credit = course.credits;
+          totalWeightedGrades += grade * credit;
+          totalWeights += credit;
+        }
       }
     });
 
     return totalWeights > 0 ? totalWeightedGrades / totalWeights : 0;
   };
 
-  // Get calculation details for display
   const getCalculationDetails = () => {
     const details: Array<{
-      course: Course; // Change from 'string' to 'Course'
+      course: Course;
       grade: number;
       weight: number;
       weightedGrade: number;
@@ -67,9 +75,14 @@ export default function Home() {
     courses.forEach((course) => {
       const grade = selectedGrades[course.id];
       if (grade !== undefined && grade !== null) {
-        const weight = course.weight || 1;
+        let weight = 0;
+        if (calcWithCredits) {
+          weight = course.credits;
+        } else {
+          weight = course.weight;
+        }
         details.push({
-          course, // Pass the entire course object
+          course,
           grade,
           weight,
           weightedGrade: grade * weight,
@@ -114,66 +127,85 @@ export default function Home() {
     }));
   };
 
+  const toggleCalculationMethod = () => {
+    setCalcWithCredits(!calcWithCredits);
+    calculateGPA();
+    getCalculationDetails();
+  };
+
   const gpa = calculateGPA();
   const calculationDetails = getCalculationDetails();
   const hasSelectedGrades = calculationDetails.length > 0;
 
   return (
-    <div className='container mx-auto max-w-7xl px-2 py-4 sm:px-4 sm:py-8'>
+    <div className="container mx-auto max-w-7xl px-2 py-4 sm:px-4 sm:py-8">
       {/* Header - Mobile optimized */}
-      <div className='mb-4 text-center sm:mb-8'>
-        <h1 className='text-foreground mb-2 text-xl font-bold sm:text-2xl lg:text-3xl'>
+      <div className="mb-4 text-center sm:mb-8">
+        <h1 className="text-foreground mb-2 text-xl font-bold sm:text-2xl lg:text-3xl">
           Calculate your GPA
         </h1>
-        <p className='text-muted-foreground px-2 text-sm sm:text-base'>
+        <p className="text-muted-foreground px-2 text-sm sm:text-base">
           Select grades for your courses organized by semester
         </p>
       </div>
 
       {/* GPA Calculation Card - Mobile optimized */}
       {hasSelectedGrades && (
-        <Card className='mb-4 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 sm:mb-8 dark:border-blue-800 dark:from-blue-950/20 dark:to-indigo-950/20'>
-          <CardHeader className='pb-2 text-center sm:pb-4'>
-            <CardTitle className='flex items-center justify-center gap-2 text-lg sm:text-xl lg:text-2xl'>
-              <Calculator className='h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6' />
+        <Card className="mb-4 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 sm:mb-8 dark:border-blue-800 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <CardHeader className="pb-2 text-center sm:pb-4">
+            <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl lg:text-2xl">
+              <Calculator className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
               Your GPA
             </CardTitle>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <Label htmlFor="calc-switch" className="text-sm">
+                Weights
+              </Label>
+              <Switch
+                checked={calcWithCredits}
+                onCheckedChange={toggleCalculationMethod}
+                id="calc-switch"
+              />
+              <Label htmlFor="calc-switch" className="text-sm">
+                Credits
+              </Label>
+            </div>
           </CardHeader>
-          <CardContent className='pt-0'>
-            <div className='mb-3 text-center sm:mb-6'>
-              <div className='mb-1 text-2xl font-bold text-blue-600 sm:mb-2 sm:text-3xl lg:text-4xl dark:text-blue-400'>
-                {gpa.toFixed(2)}
+          <CardContent className="pt-0">
+            <div className="mb-3 text-center sm:mb-6">
+              <div className="mb-1 text-2xl font-bold text-blue-600 sm:mb-2 sm:text-3xl lg:text-4xl dark:text-blue-400">
+                {gpa.toFixed(1)}
               </div>
-              <p className='text-muted-foreground text-xs sm:text-sm'>
+              <p className="text-muted-foreground text-xs sm:text-sm">
                 Based on {calculationDetails.length} course
                 {calculationDetails.length !== 1 ? "s" : ""}
               </p>
             </div>
 
             {/* Calculation Details - Mobile optimized */}
-            <div className='space-y-2'>
-              <h4 className='text-muted-foreground text-xs font-semibold sm:text-sm'>
+            <div className="space-y-2">
+              <h4 className="text-muted-foreground text-xs font-semibold sm:text-sm">
                 Calculation Details:
               </h4>
-              <div className='grid gap-1 text-xs sm:gap-2 sm:text-sm'>
+              <div className="grid gap-1 text-xs sm:gap-2 sm:text-sm">
                 {calculationDetails.map(
                   ({ course, grade, weight, weightedGrade }) => (
                     <div
                       key={course.id}
-                      className='bg-background/50 flex items-center justify-between rounded px-2 py-1 text-xs sm:text-sm'
+                      className="bg-background/50 flex items-center justify-between rounded px-2 py-1 text-xs sm:text-sm"
                     >
-                      <span className='mr-2 flex-1 truncate font-medium'>
+                      <span className="mr-2 flex-1 truncate font-medium">
                         {course.title}
                       </span>
-                      <span className='text-muted-foreground whitespace-nowrap'>
+                      <span className="text-muted-foreground whitespace-nowrap">
                         {grade} × {weight} = {weightedGrade.toFixed(1)}
                       </span>
                     </div>
                   ),
                 )}
-                <div className='mt-1 flex items-center justify-between border-t pt-1 text-xs font-semibold sm:mt-2 sm:pt-2 sm:text-sm'>
+                <div className="mt-1 flex items-center justify-between border-t pt-1 text-xs font-semibold sm:mt-2 sm:pt-2 sm:text-sm">
                   <span>Total:</span>
-                  <span className='whitespace-nowrap'>
+                  <span className="whitespace-nowrap">
                     {calculationDetails
                       .reduce((sum, detail) => sum + detail.weightedGrade, 0)
                       .toFixed(1)}{" "}
@@ -192,15 +224,15 @@ export default function Home() {
       )}
 
       {/* Mobile-first grid layout */}
-      <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:gap-6 xl:grid-cols-3'>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:gap-6 xl:grid-cols-3">
         {semesters.map((semester) => (
-          <div key={semester} className='space-y-3 sm:space-y-4'>
+          <div key={semester} className="space-y-3 sm:space-y-4">
             {/* Semester header - Mobile optimized */}
-            <div className='bg-primary text-primary-foreground rounded-lg p-3 text-center sm:p-4'>
-              <h2 className='text-base font-semibold sm:text-lg lg:text-xl'>
+            <div className="bg-primary text-primary-foreground rounded-lg p-3 text-center sm:p-4">
+              <h2 className="text-base font-semibold sm:text-lg lg:text-xl">
                 Semester {semester}
               </h2>
-              <p className='text-xs opacity-90 sm:text-sm'>
+              <p className="text-xs opacity-90 sm:text-sm">
                 {groupedCourses[semester].mandatory.length} Mandatory
                 {groupedCourses[semester].optional.length > 0 &&
                   ` • ${groupedCourses[semester].optional.length} Optional`}
@@ -208,7 +240,7 @@ export default function Home() {
             </div>
 
             {/* Mandatory courses */}
-            <div className='space-y-3 sm:space-y-4'>
+            <div className="space-y-3 sm:space-y-4">
               {groupedCourses[semester].mandatory.map((course) => (
                 <GradePicker
                   key={course.id}
@@ -220,21 +252,21 @@ export default function Home() {
 
             {/* Optional courses section - Mobile optimized */}
             {groupedCourses[semester].optional.length > 0 && (
-              <div className='space-y-3 sm:space-y-4'>
+              <div className="space-y-3 sm:space-y-4">
                 <Button
-                  variant='outline'
-                  size='sm'
+                  variant="outline"
+                  size="sm"
                   onClick={() => toggleOptionalCourses(semester)}
-                  className='h-8 w-full text-xs sm:h-9 sm:text-sm'
+                  className="h-8 w-full text-xs sm:h-9 sm:text-sm"
                 >
                   {showOptional[semester] ? (
                     <>
-                      <Minus className='mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4' />
+                      <Minus className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
                       Hide Optional
                     </>
                   ) : (
                     <>
-                      <Plus className='mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4' />
+                      <Plus className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
                       Show Optional ({groupedCourses[semester].optional.length})
                     </>
                   )}
@@ -242,9 +274,9 @@ export default function Home() {
 
                 {/* Optional courses */}
                 {showOptional[semester] && (
-                  <div className='space-y-3 sm:space-y-4'>
+                  <div className="space-y-3 sm:space-y-4">
                     {groupedCourses[semester].optional.map((course) => (
-                      <div key={course.id} className='relative'>
+                      <div key={course.id} className="relative">
                         <GradePicker
                           course={course}
                           onGradeChange={handleGradeChange}
@@ -261,8 +293,8 @@ export default function Home() {
 
       {/* No courses message */}
       {semesters.length === 0 && (
-        <div className='text-muted-foreground mt-4 px-4 text-center sm:mt-8'>
-          <p className='text-sm sm:text-base'>
+        <div className="text-muted-foreground mt-4 px-4 text-center sm:mt-8">
+          <p className="text-sm sm:text-base">
             No courses found. Add some courses to get started.
           </p>
         </div>
