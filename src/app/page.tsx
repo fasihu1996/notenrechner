@@ -367,6 +367,7 @@ export default function Home() {
                   key={course.id}
                   course={course}
                   onGradeChange={handleGradeChange}
+                  initialGrade={selectedGrades[course.id] || null}
                 />
               ))}
             </div>
@@ -401,6 +402,7 @@ export default function Home() {
                         <GradePicker
                           course={course}
                           onGradeChange={handleGradeChange}
+                          initialGrade={selectedGrades[course.id] || null} // Pass the initial grade
                         />
                       </div>
                     ))}

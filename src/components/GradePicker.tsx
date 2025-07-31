@@ -15,14 +15,25 @@ import { Course, grades, passFail } from "@/types/course";
 interface GradePickerProps {
   course: Course;
   onGradeChange?: (courseId: string, grade: number | null) => void;
+  initialGrade?: number | null;
 }
 
 export default function GradePicker({
   course,
   onGradeChange,
+  initialGrade,
 }: GradePickerProps) {
   const [selectedGrade, setSelectedGrade] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
+
+  // Initialize selectedGrade from initialGrade prop
+  useEffect(() => {
+    if (initialGrade !== undefined && initialGrade !== null) {
+      setSelectedGrade(initialGrade.toString());
+    } else {
+      setSelectedGrade("");
+    }
+  }, [initialGrade, course.graded]);
 
   // Detect if device is mobile
   useEffect(() => {
@@ -45,11 +56,18 @@ export default function GradePicker({
     let gradeNumber: number | null = null;
 
     if (course.graded) {
-      gradeNumber = value ? parseFloat(value) : null;
+      // Handle special cases - now checking for "unselect" to match processedOptions
+      if (value === "" || value === "unselect") {
+        gradeNumber = null;
+      } else {
+        gradeNumber = parseFloat(value);
+      }
     } else {
-      if (value === "pass") {
+      if (value === "1.0" || value === "pass") {
         gradeNumber = 1.0;
-      } else if (value === "fail") {
+      } else if (value === "0.0" || value === "fail") {
+        gradeNumber = 0.0;
+      } else if (value === "nothing" || value === "") {
         gradeNumber = null;
       }
     }
@@ -57,7 +75,15 @@ export default function GradePicker({
     onGradeChange?.(course.id, gradeNumber);
   };
 
-  const options = course.graded ? grades : passFail;
+  // Filter out null values and convert them to a special string
+  const processedOptions = (course.graded ? grades : passFail).map(
+    (option) => ({
+      ...option,
+      value:
+        option.value === null ? "unselect" : option.value?.toString() || "",
+    }),
+  );
+
   const placeholder = course.graded
     ? "Note..."
     : "Bestanden/Nicht bestanden...";
@@ -103,11 +129,9 @@ export default function GradePicker({
               onChange={(e) => handleGradeChange(e.target.value)}
               className="bg-background border-input focus:ring-ring h-10 w-full appearance-none rounded-md border bg-[length:1rem] bg-right bg-no-repeat px-3 py-2 pr-8 text-sm shadow-sm focus:border-transparent focus:ring-2 focus:outline-none"
             >
-              <option value="" disabled>
-                {placeholder}
-              </option>
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
+              <option value="">{placeholder}</option>
+              {processedOptions.map((option, index) => (
+                <option key={`${option.value}-${index}`} value={option.value}>
                   {option.label}
                 </option>
               ))}
@@ -122,9 +146,9 @@ export default function GradePicker({
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
               <SelectContent>
-                {options.map((option) => (
+                {processedOptions.map((option, index) => (
                   <SelectItem
-                    key={option.value}
+                    key={`${option.value}-${index}`}
                     value={option.value}
                     className="text-xs sm:text-sm"
                   >
@@ -136,12 +160,15 @@ export default function GradePicker({
           )}
         </div>
 
-        {selectedGrade && (
+        {selectedGrade && selectedGrade !== "unselect" && (
           <div className="bg-muted mt-2 rounded-md p-2 sm:mt-3">
             <p className="text-muted-foreground text-xs">
               {course.graded ? "Selected Grade:" : "Selected Result:"}{" "}
               <span className="font-medium">
-                {options.find((opt) => opt.value === selectedGrade)?.label}
+                {
+                  processedOptions.find((opt) => opt.value === selectedGrade)
+                    ?.label
+                }
               </span>
             </p>
           </div>
