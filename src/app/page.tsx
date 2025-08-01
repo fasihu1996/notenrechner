@@ -322,7 +322,7 @@ export default function Home() {
           <CardContent className="pt-0">
             <div className="mb-3 text-center sm:mb-6">
               <div className="mb-1 text-2xl font-bold text-blue-600 sm:mb-2 sm:text-3xl lg:text-4xl dark:text-blue-400">
-                {gpa.toFixed(1)}
+                {gpa.toFixed(3)}, will be shown as {Math.floor(gpa * 10) / 10}
               </div>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 Based on {calculationDetails.length} course
