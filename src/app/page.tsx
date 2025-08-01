@@ -28,7 +28,7 @@ export default function Home() {
       setCourses(coursesData || []);
 
       const { data: gradesData } = await supabase
-        .from("grades") // Specify the schema
+        .from("grades")
         .select("course_id, grade")
         .eq("student_id", (await supabase.auth.getUser()).data.user?.id);
 
@@ -38,6 +38,7 @@ export default function Home() {
           existingGrades[grade.course_id.toString()] = grade.grade;
         });
         setSelectedGrades(existingGrades);
+        setHasUnsavedChanges(false);
       }
     };
     fetchData();
