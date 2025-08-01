@@ -82,26 +82,31 @@ export default function GradePicker({
   return (
     <Card className="w-full">
       <CardHeader className="pb-2 sm:pb-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        {/* Stack layout on all screen sizes to prevent overflow */}
+        <div className="flex flex-col gap-2 sm:gap-3">
+          {/* Course title - allow it to wrap naturally */}
           <CardTitle className="text-sm leading-tight font-semibold sm:text-base lg:text-lg">
             {course.title}
           </CardTitle>
-          <div className="flex flex-shrink-0 flex-wrap gap-1 sm:gap-2">
-            <Badge variant="secondary" className="text-xs">
+
+          {/* Badges row - always on separate line to prevent overflow */}
+          <div className="flex flex-wrap gap-1 sm:gap-2">
+            <Badge variant="secondary" className="shrink-0 text-xs">
               {course.credits} ECTS
             </Badge>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="shrink-0 text-xs">
               {course.weight}x
             </Badge>
             <Badge
               variant={course.graded ? "default" : "destructive"}
-              className="text-xs"
+              className="shrink-0 text-xs"
             >
               {course.graded ? "B" : "U"}
             </Badge>
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="pt-0">
         <div className="space-y-2">
           <label
@@ -116,23 +121,29 @@ export default function GradePicker({
             // Native select for mobile
             <select
               id={`grade-${course.id}`}
-              value={selectedGrade}
-              onChange={(e) => handleGradeChange(e.target.value)}
+              value={selectedGrade || ""}
+              onChange={(e) => handleGradeChange(Number(e.target.value))}
               className="bg-background border-input focus:ring-ring h-10 w-full appearance-none rounded-md border bg-[length:1rem] bg-right bg-no-repeat px-3 py-2 pr-8 text-sm shadow-sm focus:border-transparent focus:ring-2 focus:outline-none"
             >
               <option value="">{placeholder}</option>
               {processedOptions.map((option, index) => (
-                <option key={`${option.value}-${index}`} value={option.value}>
+                <option
+                  key={`${option.value}-${index}`}
+                  value={option.value || ""}
+                >
                   {option.label}
                 </option>
               ))}
             </select>
           ) : (
             // Custom Radix UI Select for desktop
-            <Select value={selectedGrade} onValueChange={handleGradeChange}>
+            <Select
+              value={selectedGrade?.toString() || ""}
+              onValueChange={(value) => handleGradeChange(Number(value))}
+            >
               <SelectTrigger
                 id={`grade-${course.id}`}
-                className="h-8 text-xs sm:h-9 sm:text-sm"
+                className="h-8 w-full text-xs sm:h-9 sm:text-sm"
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
@@ -140,7 +151,7 @@ export default function GradePicker({
                 {processedOptions.map((option, index) => (
                   <SelectItem
                     key={`${option.value}-${index}`}
-                    value={option.value}
+                    value={option.value?.toString() || ""}
                     className="text-xs sm:text-sm"
                   >
                     {option.label}
