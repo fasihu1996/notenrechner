@@ -14,8 +14,8 @@ import { Course, grades, passFail } from "@/types/course";
 
 interface GradePickerProps {
   course: Course;
-  onGradeChange?: (courseId: string, grade: number | null) => void;
-  initialGrade?: number | null;
+  onGradeChange?: (courseId: number, grade: number | null) => void;
+  initialGrade?: number;
 }
 
 export default function GradePicker({
@@ -23,15 +23,14 @@ export default function GradePicker({
   onGradeChange,
   initialGrade,
 }: GradePickerProps) {
-  const [selectedGrade, setSelectedGrade] = useState<string>("");
+  const [selectedGrade, setSelectedGrade] = useState<number>();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Initialize selectedGrade from initialGrade prop
   useEffect(() => {
     if (initialGrade !== undefined && initialGrade !== null) {
-      setSelectedGrade(initialGrade.toString());
+      setSelectedGrade(initialGrade);
     } else {
-      setSelectedGrade("");
+      setSelectedGrade();
     }
   }, [initialGrade, course.graded]);
 
@@ -50,24 +49,23 @@ export default function GradePicker({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleGradeChange = (value: string) => {
+  const handleGradeChange = (value: number) => {
     setSelectedGrade(value);
 
     let gradeNumber: number | null = null;
 
     if (course.graded) {
-      // Handle special cases - now checking for "unselect" to match processedOptions
-      if (value === "" || value === "unselect") {
+      if (value === -1) {
         gradeNumber = null;
       } else {
-        gradeNumber = parseFloat(value);
+        gradeNumber = value;
       }
     } else {
-      if (value === "1.0" || value === "pass") {
+      if (value === 1.0) {
         gradeNumber = 1.0;
-      } else if (value === "0.0" || value === "fail") {
+      } else if (value === 0.0) {
         gradeNumber = 0.0;
-      } else if (value === "nothing" || value === "") {
+      } else if (value === -1) {
         gradeNumber = null;
       }
     }
@@ -75,14 +73,7 @@ export default function GradePicker({
     onGradeChange?.(course.id, gradeNumber);
   };
 
-  // Filter out null values and convert them to a special string
-  const processedOptions = (course.graded ? grades : passFail).map(
-    (option) => ({
-      ...option,
-      value:
-        option.value === null ? "unselect" : option.value?.toString() || "",
-    }),
-  );
+  const processedOptions = course.graded ? grades : passFail;
 
   const placeholder = course.graded
     ? "Note..."
@@ -159,20 +150,6 @@ export default function GradePicker({
             </Select>
           )}
         </div>
-
-        {selectedGrade && selectedGrade !== "unselect" && (
-          <div className="bg-muted mt-2 rounded-md p-2 sm:mt-3">
-            <p className="text-muted-foreground text-xs">
-              {course.graded ? "Selected Grade:" : "Selected Result:"}{" "}
-              <span className="font-medium">
-                {
-                  processedOptions.find((opt) => opt.value === selectedGrade)
-                    ?.label
-                }
-              </span>
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
