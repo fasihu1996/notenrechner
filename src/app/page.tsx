@@ -365,7 +365,7 @@ export default function Home() {
                       <span className="text-muted-foreground whitespace-nowrap">
                         {isBachelorarbeit
                           ? `${grade} × 20% = ${weightedGrade.toFixed(2)}`
-                          : `${grade} × ${weight}${calcWithCredits ? " ECTS" : "x"} = ${weightedGrade.toFixed(1)}`}
+                          : `${grade} × ${weight}${calcWithCredits ? " ECTS" : "x"} = ${weightedGrade.toFixed(2)}`}
                       </span>
                     </div>
                   ),
@@ -401,21 +401,21 @@ export default function Home() {
                             <div className="space-y-1 text-xs">
                               <div className="flex justify-between">
                                 <span>Regular courses GPA:</span>
-                                <span>{regularGPA.toFixed(1)}</span>
+                                <span>{regularGPA.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Regular GPA × 80%:</span>
-                                <span>{(regularGPA * 0.8).toFixed(1)}</span>
+                                <span>{(regularGPA * 0.8).toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Bachelorarbeit × 20%:</span>
                                 <span>
-                                  {(bachelorarbeitsGrade * 0.2).toFixed(1)}
+                                  {(bachelorarbeitsGrade * 0.2).toFixed(2)}
                                 </span>
                               </div>
                               <div className="flex justify-between border-t pt-1 font-semibold">
                                 <span>Final GPA:</span>
-                                <span>{gpa.toFixed(1)}</span>
+                                <span>{gpa.toFixed(2)}</span>
                               </div>
                             </div>
                           );
@@ -431,13 +431,13 @@ export default function Home() {
                     <span className="whitespace-nowrap">
                       {calculationDetails
                         .reduce((sum, detail) => sum + detail.weightedGrade, 0)
-                        .toFixed(1)}{" "}
+                        .toFixed(2)}{" "}
                       ÷{" "}
                       {calculationDetails.reduce(
                         (sum, detail) => sum + detail.weight,
                         0,
                       )}
-                      {calcWithCredits ? " ECTS" : ""} = {gpa.toFixed(1)}
+                      {calcWithCredits ? " ECTS" : ""} = {gpa.toFixed(2)}
                     </span>
                   </div>
                 )}
