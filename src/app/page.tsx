@@ -146,14 +146,14 @@ export default function Home() {
     courses.forEach((course) => {
       const grade = selectedGrades[course.id];
       if (grade !== undefined && grade !== null) {
-        if (!calcWithCredits) {
-          const weight = course.weight || 1;
-          totalWeightedGrades += grade * weight;
-          totalWeights += weight;
-        } else {
+        if (calcWithCredits) {
           const credit = course.credits;
           totalWeightedGrades += grade * credit;
           totalWeights += credit;
+        } else {
+          const weight = course.weight || 1;
+          totalWeightedGrades += grade * weight;
+          totalWeights += weight;
         }
       }
     });
