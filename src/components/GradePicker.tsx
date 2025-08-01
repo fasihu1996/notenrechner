@@ -15,7 +15,7 @@ import { Course, grades, passFail } from "@/types/course";
 interface GradePickerProps {
   course: Course;
   onGradeChange?: (courseId: number, grade: number | null) => void;
-  initialGrade?: number;
+  initialGrade?: number | null;
 }
 
 export default function GradePicker({
@@ -30,7 +30,7 @@ export default function GradePicker({
     if (initialGrade !== undefined && initialGrade !== null) {
       setSelectedGrade(initialGrade);
     } else {
-      setSelectedGrade();
+      setSelectedGrade(undefined);
     }
   }, [initialGrade, course.graded]);
 

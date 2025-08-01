@@ -15,7 +15,7 @@ export default function Home() {
   const [supabase] = useState(() => createClient());
   const [courses, setCourses] = useState<Course[]>([]);
   const [showOptional, setShowOptional] = useState<Record<number, boolean>>({});
-  const [selectedGrades, setSelectedGrades] = useState<Record<string, number>>(
+  const [selectedGrades, setSelectedGrades] = useState<Record<number, number>>(
     {},
   );
   const [calcWithCredits, setCalcWithCredits] = useState(false);
@@ -44,7 +44,7 @@ export default function Home() {
     fetchData();
   }, [supabase]);
 
-  const handleGradeChange = (courseId: string, grade: number | null) => {
+  const handleGradeChange = (courseId: number, grade: number | null) => {
     setSelectedGrades((prev) => {
       const newGrades = { ...prev };
       if (grade === null) {
