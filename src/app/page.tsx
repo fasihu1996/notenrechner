@@ -706,29 +706,23 @@ export default function Home() {
                     {/* Improvement Potential Bar */}
                     <div className="mt-3">
                       <div className="text-muted-foreground mb-1 flex justify-between text-xs">
-                        <span>Improvement Potential</span>
+                        <span>GPA Improvement Potential</span>
                         <span>
-                          {candidate.improvementPotential.toFixed(1)} grades
+                          {candidate.hypotheticalImpact.toFixed(3)} grade points
                         </span>
                       </div>
                       <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-orange-400 to-green-500 transition-all duration-300"
                           style={{
-                            width: `${Math.min(100, (candidate.improvementPotential / 4.0) * 100)}%`,
+                            width: `${Math.min(100, (-candidate.hypotheticalImpact / 0.05) * 100)}%`,
                           }}
                         />
                       </div>
-                    </div>
-
-                    {/* Recommendation Text */}
-                    <div className="text-muted-foreground mt-2 text-xs">
-                      <span className="font-medium">Recommendation:</span>{" "}
-                      {candidate.improvementPotential >= 2.0
-                        ? "High impact retake - significant GPA boost potential"
-                        : candidate.improvementPotential >= 1.0
-                          ? "Moderate impact retake - decent improvement possible"
-                          : "Low impact retake - minimal improvement expected"}
+                      <div className="text-muted-foreground mt-1 flex justify-between text-xs">
+                        <span>0</span>
+                        <span>0.05</span>
+                      </div>
                     </div>
                   </div>
                 );
