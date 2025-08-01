@@ -138,25 +138,38 @@ export default function Home() {
     }
   };
 
-  // Calculate weighted average
   const calculateGPA = () => {
     let totalWeightedGrades = 0;
     let totalWeights = 0;
+    let bachelorarbeitsGrade: number | null = null;
 
     courses.forEach((course) => {
       const grade = selectedGrades[course.id];
       if (grade !== undefined && grade !== null) {
-        if (calcWithCredits) {
-          const credit = course.credits;
-          totalWeightedGrades += grade * credit;
-          totalWeights += credit;
+        if (course.title.toLowerCase().includes("bachelorarbeit")) {
+          bachelorarbeitsGrade = grade;
         } else {
-          const weight = course.weight || 1;
-          totalWeightedGrades += grade * weight;
-          totalWeights += weight;
+          if (calcWithCredits) {
+            const credit = course.credits;
+            totalWeightedGrades += grade * credit;
+            totalWeights += credit;
+          } else {
+            const weight = course.weight || 1;
+            totalWeightedGrades += grade * weight;
+            totalWeights += weight;
+          }
         }
       }
     });
+
+    if (bachelorarbeitsGrade !== null) {
+      if (totalWeights > 0) {
+        const regularGPA = totalWeightedGrades / totalWeights;
+        return regularGPA * 0.8 + bachelorarbeitsGrade * 0.2;
+      } else {
+        return bachelorarbeitsGrade;
+      }
+    }
 
     return totalWeights > 0 ? totalWeightedGrades / totalWeights : 0;
   };
@@ -167,27 +180,43 @@ export default function Home() {
       grade: number;
       weight: number;
       weightedGrade: number;
+      isBachelorarbeit?: boolean;
     }> = [];
+
+    let bachelorarbeitsGrade: number | null = null;
+    let bachelorarbeitsCourse: Course | null = null;
 
     courses.forEach((course) => {
       const grade = selectedGrades[course.id];
       if (grade !== undefined && grade !== null) {
-        let weight = 0;
-        if (calcWithCredits) {
-          weight = course.credits;
+        if (course.title.toLowerCase().includes("bachelorarbeit")) {
+          bachelorarbeitsGrade = grade;
+          bachelorarbeitsCourse = course;
+          details.push({
+            course,
+            grade,
+            weight: 0.2, // 20% weight for display
+            weightedGrade: grade * 0.2,
+            isBachelorarbeit: true,
+          });
         } else {
-          weight = course.weight;
+          let weight = 0;
+          if (calcWithCredits) {
+            weight = course.credits;
+          } else {
+            weight = course.weight;
+          }
+          details.push({
+            course,
+            grade,
+            weight,
+            weightedGrade: grade * weight,
+          });
         }
-        details.push({
-          course,
-          grade,
-          weight,
-          weightedGrade: grade * weight,
-        });
       }
     });
 
-    return details;
+    return { details, bachelorarbeitsGrade, bachelorarbeitsCourse };
   };
 
   const groupedCourses = courses.reduce(
@@ -225,10 +254,10 @@ export default function Home() {
   const toggleCalculationMethod = () => {
     setCalcWithCredits(!calcWithCredits);
   };
-
-  const gpa = calculateGPA();
-  const calculationDetails = getCalculationDetails();
+  const { details: calculationDetails, bachelorarbeitsGrade } =
+    getCalculationDetails();
   const hasSelectedGrades = calculationDetails.length > 0;
+  const gpa = calculateGPA();
 
   return (
     <div className="container mx-auto max-w-7xl px-2 py-4 sm:px-4 sm:py-8">
@@ -293,15 +322,16 @@ export default function Home() {
           <CardContent className="pt-0">
             <div className="mb-3 text-center sm:mb-6">
               <div className="mb-1 text-2xl font-bold text-blue-600 sm:mb-2 sm:text-3xl lg:text-4xl dark:text-blue-400">
-                {gpa.toFixed(2)}
+                {gpa.toFixed(1)}
               </div>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 Based on {calculationDetails.length} course
                 {calculationDetails.length !== 1 ? "s" : ""} using{" "}
                 {calcWithCredits ? "credits" : "weights"}
+                {bachelorarbeitsGrade !== null &&
+                  " (with Bachelor's Thesis weighting)"}
               </p>
             </div>
-
             {/* Calculation Details - Mobile optimized */}
             <div className="space-y-2">
               <h4 className="text-muted-foreground text-xs font-semibold sm:text-sm">
@@ -309,36 +339,108 @@ export default function Home() {
               </h4>
               <div className="grid gap-1 text-xs sm:gap-2 sm:text-sm">
                 {calculationDetails.map(
-                  ({ course, grade, weight, weightedGrade }) => (
+                  ({
+                    course,
+                    grade,
+                    weight,
+                    weightedGrade,
+                    isBachelorarbeit,
+                  }) => (
                     <div
                       key={course.id}
-                      className="bg-background/50 flex items-center justify-between rounded px-2 py-1 text-xs sm:text-sm"
+                      className={`bg-background/50 flex items-center justify-between rounded px-2 py-1 text-xs sm:text-sm ${
+                        isBachelorarbeit
+                          ? "border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20"
+                          : ""
+                      }`}
                     >
                       <span className="mr-2 flex-1 truncate font-medium">
                         {course.title}
+                        {isBachelorarbeit && (
+                          <span className="ml-1 text-xs text-orange-600">
+                            (20%)
+                          </span>
+                        )}
                       </span>
                       <span className="text-muted-foreground whitespace-nowrap">
-                        {grade} × {weight}
-                        {calcWithCredits ? " ECTS" : "x"} ={" "}
-                        {weightedGrade.toFixed(1)}
+                        {isBachelorarbeit
+                          ? `${grade} × 20% = ${weightedGrade.toFixed(2)}`
+                          : `${grade} × ${weight}${calcWithCredits ? " ECTS" : "x"} = ${weightedGrade.toFixed(1)}`}
                       </span>
                     </div>
                   ),
                 )}
-                <div className="mt-1 flex items-center justify-between border-t pt-1 text-xs font-semibold sm:mt-2 sm:pt-2 sm:text-sm">
-                  <span>Total:</span>
-                  <span className="whitespace-nowrap">
-                    {calculationDetails
-                      .reduce((sum, detail) => sum + detail.weightedGrade, 0)
-                      .toFixed(1)}{" "}
-                    ÷{" "}
-                    {calculationDetails.reduce(
-                      (sum, detail) => sum + detail.weight,
-                      0,
-                    )}
-                    {calcWithCredits ? " ECTS" : ""} = {gpa.toFixed(2)}
-                  </span>
-                </div>
+
+                {/* Special calculation display when Bachelorarbeit is present */}
+                {bachelorarbeitsGrade !== null &&
+                  calculationDetails.filter((d) => !d.isBachelorarbeit).length >
+                    0 && (
+                    <>
+                      <div className="mt-2 border-t pt-2">
+                        <div className="text-muted-foreground mb-1 text-xs">
+                          Special Bachelor&apos;s Thesis Calculation:
+                        </div>
+                        {(() => {
+                          const regularDetails = calculationDetails.filter(
+                            (d) => !d.isBachelorarbeit,
+                          );
+                          const regularTotal = regularDetails.reduce(
+                            (sum, detail) => sum + detail.weightedGrade,
+                            0,
+                          );
+                          const regularWeights = regularDetails.reduce(
+                            (sum, detail) => sum + detail.weight,
+                            0,
+                          );
+                          const regularGPA =
+                            regularWeights > 0
+                              ? regularTotal / regularWeights
+                              : 0;
+
+                          return (
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between">
+                                <span>Regular courses GPA:</span>
+                                <span>{regularGPA.toFixed(1)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Regular GPA × 80%:</span>
+                                <span>{(regularGPA * 0.8).toFixed(1)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Bachelorarbeit × 20%:</span>
+                                <span>
+                                  {(bachelorarbeitsGrade * 0.2).toFixed(1)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between border-t pt-1 font-semibold">
+                                <span>Final GPA:</span>
+                                <span>{gpa.toFixed(1)}</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </>
+                  )}
+
+                {/* Regular total when no Bachelorarbeit */}
+                {bachelorarbeitsGrade === null && (
+                  <div className="mt-1 flex items-center justify-between border-t pt-1 text-xs font-semibold sm:mt-2 sm:pt-2 sm:text-sm">
+                    <span>Total:</span>
+                    <span className="whitespace-nowrap">
+                      {calculationDetails
+                        .reduce((sum, detail) => sum + detail.weightedGrade, 0)
+                        .toFixed(1)}{" "}
+                      ÷{" "}
+                      {calculationDetails.reduce(
+                        (sum, detail) => sum + detail.weight,
+                        0,
+                      )}
+                      {calcWithCredits ? " ECTS" : ""} = {gpa.toFixed(1)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
