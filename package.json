@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.10.0",
+    "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
@@ -22,27 +23,33 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.525.0",
-    "next": "15.3.4",
+    "next": "15.5.2",
     "next-auth": "^5.0.0-beta.29",
     "next-themes": "^0.4.6",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-form-hook": "^0.0.1",
     "sonner": "^2.0.6",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
     "eslint": "^9",
-    "eslint-config-next": "15.3.4",
+    "eslint-config-next": "15.5.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.6",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9"
   }
 }
