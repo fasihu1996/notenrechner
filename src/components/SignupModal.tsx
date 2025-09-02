@@ -142,9 +142,48 @@ export default function SignupModal({
     onSwitchToLogin();
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open && isOpen) {
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        const isInputFocused =
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA";
+
+        if (!isInputFocused) {
+          handleClose();
+        }
+      }, 100);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-h-[80vh] overflow-y-auto sm:max-w-md"
+        onEscapeKeyDown={(e) => {
+          const activeElement = document.activeElement;
+          const isInputFocused =
+            activeElement?.tagName === "INPUT" ||
+            activeElement?.tagName === "TEXTAREA";
+          if (isInputFocused) {
+            e.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          const target = e.target as Element;
+          if (
+            target.closest("[data-extension]") ||
+            target.closest('[class*="extension"]') ||
+            target.closest('[id*="extension"]') ||
+            target.closest('[class*="password"]') ||
+            target.closest("[data-lastpass]") ||
+            target.closest("[data-onepassword]")
+          ) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <UserPlus className="h-5 w-5" />
@@ -338,7 +377,7 @@ export default function SignupModal({
             <Button
               type="submit"
               disabled={isPending || passwordStrength.score < 2}
-              className="w-full"
+              className="w-full cursor-pointer"
             >
               {isPending ? (
                 <>
@@ -361,7 +400,7 @@ export default function SignupModal({
               <button
                 type="button"
                 onClick={handleSwitchToLogin}
-                className="text-primary hover:text-primary/80 hover:underline"
+                className="text-primary hover:text-primary/80 cursor-pointer hover:underline"
               >
                 Sign In
               </button>

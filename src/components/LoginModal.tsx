@@ -75,9 +75,50 @@ export default function LoginModal({
     onSwitchToSignup();
   };
 
+  // Custom handler to prevent closing on certain events
+  const handleOpenChange = (open: boolean) => {
+    if (!open && isOpen) {
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        const isInputFocused =
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA";
+
+        // Don't close if an input is focused (likely means extension is active)
+        if (!isInputFocused) {
+          handleClose();
+        }
+      }, 100);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="sm:max-w-md"
+        onEscapeKeyDown={(e) => {
+          const activeElement = document.activeElement;
+          const isInputFocused =
+            activeElement?.tagName === "INPUT" ||
+            activeElement?.tagName === "TEXTAREA";
+          if (isInputFocused) {
+            e.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          const target = e.target as Element;
+          if (
+            target.closest("[data-extension]") ||
+            target.closest('[class*="extension"]') ||
+            target.closest('[id*="extension"]') ||
+            target.closest('[class*="password"]') ||
+            target.closest("[data-lastpass]") ||
+            target.closest("[data-onepassword]")
+          ) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <LogIn className="h-5 w-5" />
@@ -118,6 +159,7 @@ export default function LoginModal({
                     : ""
                 }`}
                 {...register("email")}
+                autoComplete="email"
               />
             </div>
             {errors.email && (
@@ -145,6 +187,7 @@ export default function LoginModal({
                     : ""
                 }`}
                 {...register("password")}
+                autoComplete="current-password"
               />
               <button
                 type="button"
@@ -168,7 +211,11 @@ export default function LoginModal({
 
           {/* Action Buttons */}
           <div className="flex flex-col space-y-3 pt-2">
-            <Button type="submit" disabled={isPending} className="w-full">
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full cursor-pointer"
+            >
               {isPending ? (
                 <>
                   <div className="border-background mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
@@ -190,7 +237,7 @@ export default function LoginModal({
               <button
                 type="button"
                 onClick={handleSwitchToSignup}
-                className="text-primary hover:text-primary/80 hover:underline"
+                className="text-primary hover:text-primary/80 cursor-pointer hover:underline"
               >
                 Sign Up
               </button>
