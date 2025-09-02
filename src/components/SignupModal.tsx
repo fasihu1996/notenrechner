@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { signup } from "@/app/login/actions";
+import { signupSchema, type SignupFormData } from "@/lib/schemas/auth";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,14 +44,25 @@ export default function SignupModal({
   onClose,
   onSwitchToLogin,
 }: SignupModalProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [signupState, signupAction, isPending] = useActionState(signup, null);
+  const [isPending, setIsPending] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  // Password strength checker
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    reset,
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    mode: "onChange",
+  });
+
+  const password = watch("password", "");
+  const confirmPassword = watch("confirmPassword", "");
+
   const checkPasswordStrength = (pwd: string): PasswordStrength => {
     const feedback: string[] = [];
     let score = 0;
@@ -91,38 +105,41 @@ export default function SignupModal({
   };
 
   const passwordStrength = checkPasswordStrength(password);
-  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const passwordsMatch = password === confirmPassword;
+
+  const onSubmit = async (data: SignupFormData) => {
+    setIsPending(true);
+    setServerError(null);
+
+    const formData = new FormData();
+    formData.append("email", data.email);
+    formData.append("password", data.password);
+
+    try {
+      const result = await signup(formData);
+      if (result?.error) {
+        setServerError(result.error);
+      }
+    } catch (_error) {
+      setServerError("An unexpected error occurred");
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   const handleClose = () => {
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setServerError(null);
+    reset();
     onClose();
   };
 
   const handleSwitchToLogin = () => {
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setServerError(null);
+    reset();
     onSwitchToLogin();
-  };
-
-  const getErrorIcon = (errorCode?: string) => {
-    switch (errorCode) {
-      case "weak_password":
-        return <AlertCircle className="h-4 w-4 text-orange-500" />;
-      case "invalid_credentials":
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case "user_exists":
-        return <Info className="h-4 w-4 text-blue-500" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-    }
   };
 
   return (
@@ -138,17 +155,19 @@ export default function SignupModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Error Display */}
-        {signupState?.error && (
+        {/* Server Error Display */}
+        {serverError && (
           <div className="bg-destructive/10 border-destructive/20 flex items-center gap-2 rounded-lg border p-3">
-            {getErrorIcon(signupState.code)}
-            <span className="text-destructive text-sm">
-              {signupState.error}
-            </span>
+            <AlertCircle className="text-destructive h-4 w-4" />
+            <span className="text-destructive text-sm">{serverError}</span>
           </div>
         )}
 
-        <form action={signupAction} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          noValidate
+        >
           {/* Email Field */}
           <div className="space-y-2">
             <Label htmlFor="signup-email" className="text-sm font-medium">
@@ -158,27 +177,29 @@ export default function SignupModal({
               <Mail className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 id="signup-email"
-                name="email"
                 type="email"
                 placeholder="Enter your email"
                 className={cn(
-                  "pl-10",
-                  email && !emailIsValid && "border-red-500",
+                  "pr-10 pl-10",
+                  errors.email
+                    ? "border-destructive focus:border-destructive focus:ring-destructive"
+                    : "",
                 )}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...register("email")}
               />
-              {email && (
+              {/* Show validation icon */}
+              {watch("email") && !errors.email && (
                 <div className="absolute top-3 right-3">
-                  {emailIsValid ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                  )}
+                  <CheckCircle className="h-4 w-4 text-green-500" />
                 </div>
               )}
             </div>
+            {errors.email && (
+              <div className="text-destructive flex items-center gap-1 text-sm">
+                <AlertCircle className="h-3 w-3" />
+                <span>{errors.email.message}</span>
+              </div>
+            )}
           </div>
 
           {/* Password Field */}
@@ -190,13 +211,15 @@ export default function SignupModal({
               <Lock className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 id="signup-password"
-                name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="pr-10 pl-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                className={cn(
+                  "pr-10 pl-10",
+                  errors.password
+                    ? "border-destructive focus:border-destructive focus:ring-destructive"
+                    : "",
+                )}
+                {...register("password")}
               />
               <button
                 type="button"
@@ -251,6 +274,14 @@ export default function SignupModal({
                 )}
               </div>
             )}
+
+            {/* Password validation errors */}
+            {errors.password && (
+              <div className="text-destructive flex items-center gap-1 text-sm">
+                <AlertCircle className="h-3 w-3" />
+                <span>{errors.password.message}</span>
+              </div>
+            )}
           </div>
 
           {/* Confirm Password Field */}
@@ -265,21 +296,20 @@ export default function SignupModal({
               <Lock className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 id="signup-confirm-password"
-                name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
                 className={cn(
                   "pr-10 pl-10",
-                  confirmPassword && !passwordsMatch && "border-red-500",
+                  errors.confirmPassword
+                    ? "border-destructive focus:border-destructive focus:ring-destructive"
+                    : "",
                 )}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                {...register("confirmPassword")}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="text-muted-foreground hover:text-foreground absolute top-3 right-3"
+                className="text-muted-foreground hover:text-foreground absolute top-3 right-10"
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -287,28 +317,27 @@ export default function SignupModal({
                   <Eye className="h-4 w-4" />
                 )}
               </button>
-              {confirmPassword && (
-                <div className="absolute top-3 right-3">
-                  {passwordsMatch ? (
+              {confirmPassword &&
+                !errors.confirmPassword &&
+                password === confirmPassword && (
+                  <div className="absolute top-3 right-3">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
             </div>
+            {errors.confirmPassword && (
+              <div className="text-destructive flex items-center gap-1 text-sm">
+                <AlertCircle className="h-3 w-3" />
+                <span>{errors.confirmPassword.message}</span>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col space-y-3 pt-2">
             <Button
               type="submit"
-              disabled={
-                isPending ||
-                !emailIsValid ||
-                !passwordsMatch ||
-                passwordStrength.score < 2
-              }
+              disabled={isPending || passwordStrength.score < 2}
               className="w-full"
             >
               {isPending ? (

@@ -2,8 +2,9 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useState } from "react";
 import { login } from "@/app/login/actions";
+import { loginSchema, type LoginFormData } from "@/lib/schemas/auth";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginModalProps {
   isOpen: boolean;
