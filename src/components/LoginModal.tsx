@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { login } from "@/app/login/actions";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,6 +17,13 @@ import {
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,20 +36,49 @@ export default function LoginModal({
   onSwitchToSignup,
 }: LoginModalProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [loginState, loginAction, isPending] = useActionState(
-    async (prevState: undefined, formData: FormData) => {
-      return await login(formData);
-    },
-    null,
-  );
+  const [isPending, setIsPending] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    setIsPending(true);
+    setServerError(null);
+
+    const formData = new FormData();
+    formData.append("email", data.email);
+    formData.append("password", data.password);
+
+    try {
+      const result = await login(formData);
+      if (result?.error) {
+        setServerError(result.error);
+      }
+    } catch (_error) {
+      setServerError("An unexpected error occurred");
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   const handleClose = () => {
     setShowPassword(false);
+    setServerError(null);
+    reset();
     onClose();
   };
 
   const handleSwitchToSignup = () => {
     setShowPassword(false);
+    setServerError(null);
+    reset();
     onSwitchToSignup();
   };
 
@@ -57,15 +95,19 @@ export default function LoginModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Error Display */}
-        {loginState?.error && (
+        {/* Server Error Display */}
+        {serverError && (
           <div className="bg-destructive/10 border-destructive/20 flex items-center gap-2 rounded-lg border p-3">
             <AlertCircle className="text-destructive h-4 w-4" />
-            <span className="text-destructive text-sm">{loginState.error}</span>
+            <span className="text-destructive text-sm">{serverError}</span>
           </div>
         )}
 
-        <form action={loginAction} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          noValidate
+        >
           {/* Email Field */}
           <div className="space-y-2">
             <Label htmlFor="login-email" className="text-sm font-medium">
@@ -75,13 +117,22 @@ export default function LoginModal({
               <Mail className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 id="login-email"
-                name="email"
                 type="email"
                 placeholder="Enter your email"
-                className="pl-10"
-                required
+                className={`pl-10 ${
+                  errors.email
+                    ? "border-destructive focus:border-destructive focus:ring-destructive"
+                    : ""
+                }`}
+                {...register("email")}
               />
             </div>
+            {errors.email && (
+              <div className="text-destructive flex items-center gap-1 text-sm">
+                <AlertCircle className="h-3 w-3" />
+                <span>{errors.email.message}</span>
+              </div>
+            )}
           </div>
 
           {/* Password Field */}
@@ -93,11 +144,14 @@ export default function LoginModal({
               <Lock className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
               <Input
                 id="login-password"
-                name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="pr-10 pl-10"
-                required
+                className={`pr-10 pl-10 ${
+                  errors.password
+                    ? "border-destructive focus:border-destructive focus:ring-destructive"
+                    : ""
+                }`}
+                {...register("password")}
               />
               <button
                 type="button"
@@ -111,6 +165,12 @@ export default function LoginModal({
                 )}
               </button>
             </div>
+            {errors.password && (
+              <div className="text-destructive flex items-center gap-1 text-sm">
+                <AlertCircle className="h-3 w-3" />
+                <span>{errors.password.message}</span>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
