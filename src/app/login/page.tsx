@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, UserPlus } from "lucide-react";
@@ -8,8 +10,48 @@ import LoginModal from "@/components/LoginModal";
 import SignupModal from "@/components/SignupModal";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        router.replace("/");
+        return;
+      }
+
+      setIsCheckingAuth(false);
+    };
+
+    checkUser();
+
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        router.replace("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
+      </div>
+    );
+  }
 
   const openLoginModal = () => {
     setIsSignupModalOpen(false);

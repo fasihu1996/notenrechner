@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -17,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -29,10 +29,10 @@ export default function LoginModal({
   onClose,
   onSwitchToSignup,
 }: LoginModalProps) {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter();
 
   const {
     register,
@@ -55,10 +55,9 @@ export default function LoginModal({
       const result = await login(formData);
       if (result?.error) {
         setServerError(result.error);
-      } else {
+      } else if (result?.success) {
         handleClose();
-        router.push("/");
-        router.refresh();
+        router.replace("/");
       }
     } catch (_error) {
       setServerError("An unexpected error occurred");
