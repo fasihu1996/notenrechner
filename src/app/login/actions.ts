@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
 export async function login(formData: FormData) {
@@ -34,8 +33,9 @@ export async function login(formData: FormData) {
     };
   }
 
+  // Don't redirect here, let the client handle it
   revalidatePath("/", "layout");
-  redirect("/");
+  return { success: true };
 }
 
 export async function signup(formData: FormData) {
@@ -85,6 +85,7 @@ export async function signup(formData: FormData) {
     return { error: error.message, code: errorCode };
   }
 
+  // Don't redirect here, let the client handle it
   revalidatePath("/", "layout");
-  redirect("/");
+  return { success: true };
 }
