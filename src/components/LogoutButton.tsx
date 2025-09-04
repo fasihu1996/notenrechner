@@ -18,7 +18,7 @@ export default function LogoutButton() {
     <Button
       variant="outline"
       onClick={handleLogout}
-      className="text-primary hover:text-primary/80 bg-accent p-4 font-mono text-xl font-bold tracking-wider transition-colors"
+      className="text-primary hover:bg-primary/40 bg-accent cursor-pointer p-4 font-mono text-xl font-bold tracking-wider transition-colors"
     >
       <LogOut />
     </Button>
