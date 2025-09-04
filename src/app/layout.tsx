@@ -7,7 +7,6 @@ import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const playwrite = Playwrite_DE_Grund({
-  subsets: ["latin"],
   weight: ["400"],
 });
 
