@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Playwrite_DE_Grund } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-const space = Space_Grotesk({ subsets: ["latin"] });
+const playwrite = Playwrite_DE_Grund({
+  subsets: ["latin"],
+  weight: ["400"],
+});
 
 export const metadata: Metadata = {
   title: "Notenrechner",
@@ -20,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={space.className}>
+      <body className={playwrite.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
