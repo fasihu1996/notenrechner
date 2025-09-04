@@ -52,7 +52,7 @@ export default function LoginPage() {
               {/* Sign In Button */}
               <Button
                 onClick={openLoginModal}
-                className="h-12 w-full text-base font-medium"
+                className="h-12 w-full cursor-pointer text-base font-medium"
                 size="lg"
               >
                 <LogIn className="mr-2 h-5 w-5" />
@@ -75,7 +75,7 @@ export default function LoginPage() {
               <Button
                 onClick={openSignupModal}
                 variant="outline"
-                className="h-12 w-full text-base font-medium"
+                className="h-12 w-full cursor-pointer text-base font-medium"
                 size="lg"
               >
                 <UserPlus className="mr-2 h-5 w-5" />

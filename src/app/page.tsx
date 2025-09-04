@@ -407,7 +407,7 @@ export default function Home() {
             <Button
               onClick={saveGrades}
               disabled={isSaving || !hasSelectedGrades}
-              className="gap-2"
+              className="cursor-pointer gap-2"
               size="sm"
             >
               {isSaving ? (
