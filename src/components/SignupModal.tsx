@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { signup } from "@/app/login/actions";
 import { signupSchema, type SignupFormData } from "@/lib/schemas/auth";
+import { showToast } from "@/lib/toast"; // Add this import
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -120,13 +121,20 @@ export default function SignupModal({
       const result = await signup(formData);
       if (result?.error) {
         setServerError(result.error);
+        showToast.error("An error has occurred. Please try again later.");
       } else if (result?.success) {
+        // Show success toast
+        showToast.success(
+          "A confirmation email has been sent to your email address. Please check your inbox and confirm your account.",
+        );
+
         handleClose();
-        router.push("/");
-        router.refresh();
+        // Navigate to login page instead of home since user needs to confirm email
+        router.push("/login");
       }
     } catch (_error) {
       setServerError("An unexpected error occurred");
+      showToast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsPending(false);
     }
