@@ -91,17 +91,17 @@ export default function GradePicker({
 
           {/* Badges row - always on separate line to prevent overflow */}
           <div className="flex flex-wrap gap-1 sm:gap-2">
-            <Badge variant="secondary" className="shrink-0 text-xs">
+            <Badge variant="default" className="shrink-0 text-xs">
               {course.credits} ECTS
             </Badge>
-            <Badge variant="outline" className="shrink-0 text-xs">
+            <Badge variant="default" className="shrink-0 text-xs">
               {course.weight}x
             </Badge>
             <Badge
               variant={course.graded ? "default" : "destructive"}
               className="shrink-0 text-xs"
             >
-              {course.graded ? "B" : "U"}
+              {course.graded ? "G" : "P/F"}
             </Badge>
           </div>
         </div>

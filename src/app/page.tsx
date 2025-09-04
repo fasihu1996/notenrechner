@@ -772,10 +772,10 @@ export default function Home() {
             {groupedCourses[semester].optional.length > 0 && (
               <div className="space-y-3 sm:space-y-4">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => toggleOptionalCourses(semester)}
-                  className="h-8 w-full text-xs sm:h-9 sm:text-sm"
+                  className="hover:bg-primary/30 h-8 w-full cursor-pointer text-xs sm:h-9 sm:text-sm"
                 >
                   {showOptional[semester] ? (
                     <>
