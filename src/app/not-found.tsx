@@ -16,7 +16,7 @@ export default function NotFound() {
         The page you are looking for does not exist.
       </p>
       <Link href="/" className="text-primary underline">
-        To the journal
+        Go back home
       </Link>
     </div>
   );
