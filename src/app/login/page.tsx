@@ -74,8 +74,8 @@ export default function LoginPage() {
               {/* Sign Up Button */}
               <Button
                 onClick={openSignupModal}
-                variant="outline"
-                className="h-12 w-full cursor-pointer text-base font-medium"
+                variant="secondary"
+                className="hover:bg-primary/30 h-12 w-full cursor-pointer text-base font-medium"
                 size="lg"
               >
                 <UserPlus className="mr-2 h-5 w-5" />
