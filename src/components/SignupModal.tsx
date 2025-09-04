@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -44,6 +45,7 @@ export default function SignupModal({
   onClose,
   onSwitchToLogin,
 }: SignupModalProps) {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -118,6 +120,10 @@ export default function SignupModal({
       const result = await signup(formData);
       if (result?.error) {
         setServerError(result.error);
+      } else if (result?.success) {
+        handleClose();
+        router.push("/");
+        router.refresh();
       }
     } catch (_error) {
       setServerError("An unexpected error occurred");
@@ -195,7 +201,7 @@ export default function SignupModal({
         </DialogHeader>
 
         {/* Server Error Display */}
-        {serverError && (
+        {!isPending && serverError && (
           <div className="bg-destructive/10 border-destructive/20 flex items-center gap-2 rounded-lg border p-3">
             <AlertCircle className="text-destructive h-4 w-4" />
             <span className="text-destructive text-sm">{serverError}</span>
