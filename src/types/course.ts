@@ -4,7 +4,6 @@ export interface Course {
   credits: number;
   weight: number;
   semester: number;
-  graded: boolean;
   mandatory: boolean;
 }
 
@@ -19,11 +18,5 @@ export const grades = [
   { value: 3.3, label: "3.3" },
   { value: 3.7, label: "3.7" },
   { value: 4.0, label: "4.0" },
-  { value: -1, label: "unselect" },
-] as const;
-
-export const passFail = [
-  { value: 1.0, label: "bestanden" },
-  { value: 0.0, label: "fail" },
   { value: -1, label: "unselect" },
 ] as const;
