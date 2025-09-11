@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GradePicker from "@/components/GradePicker";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ export default function Home() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null); // Add this for user feedback
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Add this for cleanup
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,6 +50,36 @@ export default function Home() {
     fetchData();
   }, [supabase]);
 
+  useEffect(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    if (
+      hasUnsavedChanges &&
+      !isSaving &&
+      Object.keys(selectedGrades).length > 0
+    ) {
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        saveGrades(true);
+      }, 5000);
+    }
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [hasUnsavedChanges, isSaving, selectedGrades]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleGradeChange = (courseId: number, grade: number | null) => {
     setSelectedGrades((prev) => {
       const newGrades = { ...prev };
@@ -61,7 +93,7 @@ export default function Home() {
     });
   };
 
-  const saveGrades = async () => {
+  const saveGrades = async (isAutoSave = false) => {
     setIsSaving(true);
     try {
       const {
@@ -69,7 +101,9 @@ export default function Home() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        toast.error("You must be logged in to save grades");
+        if (!isAutoSave) {
+          toast.error("You must be logged in to save grades");
+        }
         return;
       }
 
@@ -113,7 +147,6 @@ export default function Home() {
 
       if (inserts.length > 0) {
         const { error } = await supabase.from("grades").insert(inserts);
-
         if (error) throw error;
       }
 
@@ -134,9 +167,22 @@ export default function Home() {
       }
 
       setHasUnsavedChanges(false);
-      toast.success("Grades saved successfully!");
+      setLastSaved(new Date());
+
+      // Show different messages for manual vs auto-save
+      if (isAutoSave) {
+        toast.success("Grades auto-saved successfully!", { duration: 2000 });
+      } else {
+        toast.success("Grades saved successfully!");
+      }
     } catch (_error) {
-      toast.error("Failed to save grades. Please try again.");
+      if (!isAutoSave) {
+        toast.error("Failed to save grades. Please try again.");
+      } else {
+        toast.error("Auto-save failed. Your changes are still unsaved.", {
+          duration: 3000,
+        });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -362,7 +408,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto max-w-7xl px-2 py-4 sm:px-4 sm:py-8">
-      {/* Header with Save Button - Mobile optimized */}
+      {/* Header with Save Button - Modified for auto-save feedback */}
       <div className="mb-4 text-center sm:mb-8">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <div className="text-center sm:text-left">
@@ -374,26 +420,44 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Save Button */}
-          <div className="flex items-center gap-2">
-            {hasUnsavedChanges && (
-              <span className="text-xs text-orange-600 sm:text-sm">
-                Unsaved changes
-              </span>
-            )}
-            <Button
-              onClick={saveGrades}
-              disabled={isSaving || !hasSelectedGrades}
-              className="cursor-pointer gap-2"
-              size="sm"
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
+          {/* Save Status and Manual Save Button */}
+          <div className="flex flex-col items-center gap-2 rounded-md">
+            {/* Auto-save status */}
+            <div className="text-center text-xs">
+              {!isSaving && hasUnsavedChanges && (
+                <span className="text-orange-600">
+                  Auto-saving in 5 seconds...
+                </span>
               )}
-              {isSaving ? "Saving..." : "Save Grades"}
-            </Button>
+              {!isSaving && !hasUnsavedChanges && lastSaved && (
+                <span className="text-green-600">
+                  Last saved: {lastSaved.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+
+            {/* Manual save button */}
+            <div className="hover:bg-primary/30 flex items-center gap-2 rounded-md">
+              <Button
+                onClick={() => saveGrades(false)}
+                disabled={isSaving || !hasSelectedGrades}
+                className="cursor-pointer gap-2"
+                size="sm"
+                variant={hasUnsavedChanges ? "default" : "secondary"}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Now
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
