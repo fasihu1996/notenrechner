@@ -7,9 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Minus, Calculator, Save, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Course } from "@/types/course";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner"; // You might need to install sonner: npm install sonner
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -25,7 +23,6 @@ export default function Home() {
   const [selectedGrades, setSelectedGrades] = useState<Record<number, number>>(
     {},
   );
-  const [calcWithCredits, setCalcWithCredits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -156,15 +153,45 @@ export default function Home() {
         if (course.title.toLowerCase().includes("bachelorarbeit")) {
           bachelorarbeitsGrade = grade;
         } else {
-          if (calcWithCredits) {
-            const credit = course.credits;
-            totalWeightedGrades += grade * credit;
-            totalWeights += credit;
-          } else {
-            const weight = course.weight || 1;
-            totalWeightedGrades += grade * weight;
-            totalWeights += weight;
-          }
+          const weightValue = course.weight || 1;
+          const creditsValue = course.credits;
+
+          totalWeightedGrades += grade * weightValue * creditsValue;
+          totalWeights += weightValue * creditsValue;
+        }
+      }
+    });
+
+    if (bachelorarbeitsGrade !== null) {
+      if (totalWeights > 0) {
+        const regularGPA = totalWeightedGrades / totalWeights;
+        return regularGPA * 0.8 + bachelorarbeitsGrade * 0.2;
+      } else {
+        return bachelorarbeitsGrade;
+      }
+    }
+
+    return totalWeights > 0 ? totalWeightedGrades / totalWeights : 0;
+  };
+
+  const calculateHypotheticalGPA = (
+    hypotheticalGrades: Record<number, number>,
+  ) => {
+    let totalWeightedGrades = 0;
+    let totalWeights = 0;
+    let bachelorarbeitsGrade: number | null = null;
+
+    courses.forEach((course) => {
+      const grade = hypotheticalGrades[course.id];
+      if (grade !== undefined && grade !== null) {
+        if (course.title.toLowerCase().includes("bachelorarbeit")) {
+          bachelorarbeitsGrade = grade;
+        } else {
+          const weightValue = course.weight || 1;
+          const creditsValue = course.credits;
+
+          totalWeightedGrades += grade * weightValue * creditsValue;
+          totalWeights += weightValue * creditsValue;
         }
       }
     });
@@ -186,6 +213,8 @@ export default function Home() {
       course: Course;
       grade: number;
       weight: number;
+      credits: number;
+      totalWeight: number;
       weightedGrade: number;
       isBachelorarbeit?: boolean;
     }> = [];
@@ -202,22 +231,24 @@ export default function Home() {
           details.push({
             course,
             grade,
-            weight: 0.2, // 20% weight for display
+            weight: 1,
+            credits: course.credits,
+            totalWeight: 1,
             weightedGrade: grade * 0.2,
             isBachelorarbeit: true,
           });
         } else {
-          let weight = 0;
-          if (calcWithCredits) {
-            weight = course.credits;
-          } else {
-            weight = course.weight;
-          }
+          const weightValue = course.weight || 1;
+          const creditsValue = course.credits;
+          const totalWeight = weightValue * creditsValue;
+
           details.push({
             course,
             grade,
-            weight,
-            weightedGrade: grade * weight,
+            weight: weightValue,
+            credits: creditsValue,
+            totalWeight: totalWeight,
+            weightedGrade: grade * totalWeight,
           });
         }
       }
@@ -233,10 +264,12 @@ export default function Home() {
       course: Course;
       currentGrade: number;
       weight: number;
+      credits: number;
+      totalWeight: number;
       improvementPotential: number;
       hypotheticalImpact: number;
       isBachelorarbeit: boolean;
-      impactScore: number; // New scoring system
+      impactScore: number;
     }> = [];
 
     courses.forEach((course) => {
@@ -246,8 +279,10 @@ export default function Home() {
         currentGrade !== null &&
         currentGrade > 1.0
       ) {
-        const weight = calcWithCredits ? course.credits : course.weight;
-        const improvementPotential = currentGrade - 1.0; // Room for improvement to perfect grade
+        const weightValue = course.weight || 1;
+        const creditsValue = course.credits;
+        const totalWeight = weightValue * creditsValue;
+        const improvementPotential = currentGrade - 1.0;
 
         // Calculate hypothetical impact if this course was improved by 1.0 grade
         const improvedGrade = Math.max(1.0, currentGrade - 1.0);
@@ -259,22 +294,25 @@ export default function Home() {
         const currentGPA = calculateGPA();
         const hypotheticalImpact = hypotheticalGPA - currentGPA;
 
-        // Create a comprehensive impact score that considers:
-        // 1. Weight of the course (higher weight = more impact)
-        // 2. Improvement potential (how much the grade can be improved)
-        // 3. Special weighting for Bachelorarbeit
-        const impactScore = weight * improvementPotential;
+        // Impact score considers both weight and credits
+        const impactScore = totalWeight * improvementPotential;
 
         improvementCandidates.push({
           course,
           currentGrade,
-          weight,
+          weight: weightValue,
+          credits: creditsValue,
+          totalWeight: totalWeight,
           improvementPotential,
           hypotheticalImpact,
+          isBachelorarbeit: course.title
+            .toLowerCase()
+            .includes("bachelorarbeit"),
           impactScore,
         });
       }
     });
+
     improvementCandidates.sort((a, b) => {
       if (Math.abs(b.impactScore - a.impactScore) > 0.1) {
         return b.impactScore - a.impactScore;
@@ -282,46 +320,7 @@ export default function Home() {
       return b.hypotheticalImpact - a.hypotheticalImpact;
     });
 
-    return improvementCandidates.slice(0, 2); // Return top 2
-  };
-
-  // Add this helper function to calculate hypothetical GPA
-  const calculateHypotheticalGPA = (
-    hypotheticalGrades: Record<number, number>,
-  ) => {
-    let totalWeightedGrades = 0;
-    let totalWeights = 0;
-    let bachelorarbeitsGrade: number | null = null;
-
-    courses.forEach((course) => {
-      const grade = hypotheticalGrades[course.id];
-      if (grade !== undefined && grade !== null) {
-        if (course.title.toLowerCase().includes("bachelorarbeit")) {
-          bachelorarbeitsGrade = grade;
-        } else {
-          if (calcWithCredits) {
-            const credit = course.credits;
-            totalWeightedGrades += grade * credit;
-            totalWeights += credit;
-          } else {
-            const weight = course.weight || 1;
-            totalWeightedGrades += grade * weight;
-            totalWeights += weight;
-          }
-        }
-      }
-    });
-
-    if (bachelorarbeitsGrade !== null) {
-      if (totalWeights > 0) {
-        const regularGPA = totalWeightedGrades / totalWeights;
-        return regularGPA * 0.8 + bachelorarbeitsGrade * 0.2;
-      } else {
-        return bachelorarbeitsGrade;
-      }
-    }
-
-    return totalWeights > 0 ? totalWeightedGrades / totalWeights : 0;
+    return improvementCandidates.slice(0, 2);
   };
 
   const groupedCourses = courses.reduce(
@@ -354,10 +353,6 @@ export default function Home() {
       ...prev,
       [semester]: !prev[semester],
     }));
-  };
-
-  const toggleCalculationMethod = () => {
-    setCalcWithCredits(!calcWithCredits);
   };
   const { details: calculationDetails, bachelorarbeitsGrade } =
     getCalculationDetails();
@@ -411,19 +406,6 @@ export default function Home() {
               <Calculator className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
               Your GPA
             </CardTitle>
-            <div className="mt-2 flex items-center justify-center gap-2">
-              <Label htmlFor="calc-switch" className="text-sm">
-                Weights
-              </Label>
-              <Switch
-                checked={calcWithCredits}
-                onCheckedChange={toggleCalculationMethod}
-                id="calc-switch"
-              />
-              <Label htmlFor="calc-switch" className="text-sm">
-                Credits
-              </Label>
-            </div>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="mb-3 text-center sm:mb-6">
@@ -432,8 +414,7 @@ export default function Home() {
               </div>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 Based on {calculationDetails.length} course
-                {calculationDetails.length !== 1 ? "s" : ""} using{" "}
-                {calcWithCredits ? "credits" : "weights"}
+                {calculationDetails.length !== 1 ? "s" : ""} using weight × ECTS
                 {bachelorarbeitsGrade !== null &&
                   " (with Bachelor's Thesis weighting)"}
               </p>
@@ -452,6 +433,7 @@ export default function Home() {
                           course,
                           grade,
                           weight,
+                          credits,
                           weightedGrade,
                           isBachelorarbeit,
                         }) => (
@@ -474,7 +456,7 @@ export default function Home() {
                             <span className="text-muted-foreground whitespace-nowrap">
                               {isBachelorarbeit
                                 ? `${grade} × 20% = ${weightedGrade.toFixed(2)}`
-                                : `${grade} × ${weight}${calcWithCredits ? " ECTS" : "x"} = ${weightedGrade.toFixed(2)}`}
+                                : `${grade} × ${weight} × ${credits} ECTS = ${weightedGrade.toFixed(2)}`}
                             </span>
                           </div>
                         ),
@@ -501,7 +483,7 @@ export default function Home() {
                             0,
                           );
                           const regularWeights = regularDetails.reduce(
-                            (sum, detail) => sum + detail.weight,
+                            (sum, detail) => sum + detail.totalWeight,
                             0,
                           );
                           const regularGPA =
@@ -512,8 +494,12 @@ export default function Home() {
                           return (
                             <div className="space-y-1 text-sm">
                               <div className="flex justify-between">
-                                <span>Regular courses GPA:</span>
-                                <span>{regularGPA.toFixed(4)}</span>
+                                <span>Regular courses total:</span>
+                                <span>
+                                  {regularTotal.toFixed(2)} /{" "}
+                                  {regularWeights.toFixed(2)} ={" "}
+                                  {regularGPA.toFixed(4)}
+                                </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Regular GPA × 80%:</span>
@@ -546,10 +532,10 @@ export default function Home() {
                         .toFixed(4)}{" "}
                       ÷{" "}
                       {calculationDetails.reduce(
-                        (sum, detail) => sum + detail.weight,
+                        (sum, detail) => sum + detail.totalWeight,
                         0,
-                      )}
-                      {calcWithCredits ? " ECTS" : ""} = {gpa.toFixed(4)}
+                      )}{" "}
+                      = {gpa.toFixed(4)}
                     </span>
                   </div>
                 )}
@@ -650,11 +636,10 @@ export default function Home() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
-                            Weight ({calcWithCredits ? "ECTS" : "Multiplier"}):
+                            Weight (ECTS x Weight):
                           </span>
                           <span className="font-medium">
                             {candidate.weight}
-                            {calcWithCredits ? "" : "x"}
                           </span>
                         </div>
                       </div>
