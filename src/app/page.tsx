@@ -248,9 +248,6 @@ export default function Home() {
       ) {
         const weight = calcWithCredits ? course.credits : course.weight;
         const improvementPotential = currentGrade - 1.0; // Room for improvement to perfect grade
-        const isBachelorarbeit = course.title
-          .toLowerCase()
-          .includes("bachelorarbeit");
 
         // Calculate hypothetical impact if this course was improved by 1.0 grade
         const improvedGrade = Math.max(1.0, currentGrade - 1.0);
@@ -266,12 +263,7 @@ export default function Home() {
         // 1. Weight of the course (higher weight = more impact)
         // 2. Improvement potential (how much the grade can be improved)
         // 3. Special weighting for Bachelorarbeit
-        let impactScore = weight * improvementPotential;
-
-        // Boost score for Bachelorarbeit due to its special 20% weighting
-        if (isBachelorarbeit) {
-          impactScore *= 5; // Significantly boost Bachelorarbeit priority
-        }
+        const impactScore = weight * improvementPotential;
 
         improvementCandidates.push({
           course,
@@ -279,24 +271,14 @@ export default function Home() {
           weight,
           improvementPotential,
           hypotheticalImpact,
-          isBachelorarbeit,
           impactScore,
         });
       }
     });
-
-    // Sort by comprehensive impact score (weight × improvement potential)
     improvementCandidates.sort((a, b) => {
-      // First priority: Bachelorarbeit courses
-      if (a.isBachelorarbeit && !b.isBachelorarbeit) return -1;
-      if (!a.isBachelorarbeit && b.isBachelorarbeit) return 1;
-
-      // Second priority: Impact score (weight × improvement potential)
       if (Math.abs(b.impactScore - a.impactScore) > 0.1) {
         return b.impactScore - a.impactScore;
       }
-
-      // Third priority: Actual hypothetical GPA impact as tiebreaker
       return b.hypotheticalImpact - a.hypotheticalImpact;
     });
 
