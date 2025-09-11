@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Course, grades, passFail } from "@/types/course";
+import { Course, grades } from "@/types/course";
 
 interface GradePickerProps {
   course: Course;
@@ -32,7 +32,7 @@ export default function GradePicker({
     } else {
       setSelectedGrade(undefined);
     }
-  }, [initialGrade, course.graded]);
+  }, [initialGrade]);
 
   // Detect if device is mobile
   useEffect(() => {
@@ -54,30 +54,10 @@ export default function GradePicker({
 
     let gradeNumber: number | null = null;
 
-    if (course.graded) {
-      if (value === -1) {
-        gradeNumber = null;
-      } else {
-        gradeNumber = value;
-      }
-    } else {
-      if (value === 1.0) {
-        gradeNumber = 1.0;
-      } else if (value === 0.0) {
-        gradeNumber = 0.0;
-      } else if (value === -1) {
-        gradeNumber = null;
-      }
-    }
+    gradeNumber = value === -1 ? null : value;
 
     onGradeChange?.(course.id, gradeNumber);
   };
-
-  const processedOptions = course.graded ? grades : passFail;
-
-  const placeholder = course.graded
-    ? "Note..."
-    : "Bestanden/Nicht bestanden...";
 
   return (
     <Card className="w-full">
@@ -97,12 +77,6 @@ export default function GradePicker({
             <Badge variant="default" className="shrink-0 text-xs">
               {course.weight}x
             </Badge>
-            <Badge
-              variant={course.graded ? "default" : "destructive"}
-              className="shrink-0 text-xs"
-            >
-              {course.graded ? "G" : "P/F"}
-            </Badge>
           </div>
         </div>
       </CardHeader>
@@ -113,7 +87,7 @@ export default function GradePicker({
             htmlFor={`grade-${course.id}`}
             className="text-xs leading-none font-medium sm:text-sm"
           >
-            {course.graded ? "Select Grade" : "Select Result"}
+            Select Grade
           </label>
 
           {/* Conditional rendering based on device type */}
@@ -125,8 +99,8 @@ export default function GradePicker({
               onChange={(e) => handleGradeChange(Number(e.target.value))}
               className="bg-background border-input focus:ring-ring h-10 w-full appearance-none rounded-md border bg-[length:1rem] bg-right bg-no-repeat px-3 py-2 pr-8 text-sm shadow-sm focus:border-transparent focus:ring-2 focus:outline-none"
             >
-              <option value="">{placeholder}</option>
-              {processedOptions.map((option, index) => (
+              <option value="">Note...</option>
+              {grades.map((option, index) => (
                 <option
                   key={`${option.value}-${index}`}
                   value={option.value || ""}
@@ -145,10 +119,10 @@ export default function GradePicker({
                 id={`grade-${course.id}`}
                 className="h-8 w-full text-xs sm:h-9 sm:text-sm"
               >
-                <SelectValue placeholder={placeholder} />
+                <SelectValue placeholder="Note..." />
               </SelectTrigger>
               <SelectContent>
-                {processedOptions.map((option, index) => (
+                {grades.map((option, index) => (
                   <SelectItem
                     key={`${option.value}-${index}`}
                     value={option.value?.toString() || ""}
