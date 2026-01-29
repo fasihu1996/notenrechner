@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import GradePicker from "@/components/GradePicker";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,9 +25,108 @@ export default function Home() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null); // Add this for user feedback
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Add this for cleanup
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Define saveGrades BEFORE the useEffect that uses it
+  const saveGrades = useCallback(
+    async (isAutoSave = false) => {
+      setIsSaving(true);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (!isAutoSave) {
+            toast.error("You must be logged in to save grades");
+          }
+          return;
+        }
+
+        const gradesToSave = Object.entries(selectedGrades).map(
+          ([courseId, grade]) => ({
+            course_id: parseInt(courseId),
+            student_id: user.id,
+            grade: grade,
+            updated_at: new Date().toISOString(),
+          }),
+        );
+
+        const { data: existingGrades } = await supabase
+          .from("grades")
+          .select("course_id")
+          .eq("student_id", user.id);
+
+        const existingCourseIds = new Set(
+          existingGrades?.map((g) => g.course_id.toString()) || [],
+        );
+
+        const updates = gradesToSave.filter((grade) =>
+          existingCourseIds.has(grade.course_id.toString()),
+        );
+        const inserts = gradesToSave.filter(
+          (grade) => !existingCourseIds.has(grade.course_id.toString()),
+        );
+
+        for (const update of updates) {
+          const { error } = await supabase
+            .from("grades")
+            .update({
+              grade: update.grade,
+              updated_at: update.updated_at,
+            })
+            .eq("course_id", update.course_id)
+            .eq("student_id", user.id);
+
+          if (error) throw error;
+        }
+
+        if (inserts.length > 0) {
+          const { error } = await supabase.from("grades").insert(inserts);
+          if (error) throw error;
+        }
+
+        const selectedCourseIds = Object.keys(selectedGrades);
+        const gradesToDelete =
+          existingGrades?.filter(
+            (grade) => !selectedCourseIds.includes(grade.course_id.toString()),
+          ) || [];
+
+        for (const gradeToDelete of gradesToDelete) {
+          const { error } = await supabase
+            .from("grades")
+            .delete()
+            .eq("course_id", gradeToDelete.course_id)
+            .eq("student_id", user.id);
+
+          if (error) throw error;
+        }
+
+        setHasUnsavedChanges(false);
+        setLastSaved(new Date());
+
+        if (isAutoSave) {
+          toast.success("Grades auto-saved successfully!", { duration: 2000 });
+        } else {
+          toast.success("Grades saved successfully!");
+        }
+      } catch (_error) {
+        if (!isAutoSave) {
+          toast.error("Failed to save grades. Please try again.");
+        } else {
+          toast.error("Auto-save failed. Your changes are still unsaved.", {
+            duration: 3000,
+          });
+        }
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [supabase, selectedGrades],
+  );
+
+  // Fetch data on mount
   useEffect(() => {
     const fetchData = async () => {
       const { data: coursesData } = await supabase.from("courses").select();
@@ -50,6 +149,7 @@ export default function Home() {
     fetchData();
   }, [supabase]);
 
+  // Auto-save effect - NOW saveGrades is defined above
   useEffect(() => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
@@ -69,7 +169,7 @@ export default function Home() {
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges, isSaving, selectedGrades]);
+  }, [hasUnsavedChanges, isSaving, selectedGrades, saveGrades]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -91,101 +191,6 @@ export default function Home() {
       setHasUnsavedChanges(true);
       return newGrades;
     });
-  };
-
-  const saveGrades = async (isAutoSave = false) => {
-    setIsSaving(true);
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        if (!isAutoSave) {
-          toast.error("You must be logged in to save grades");
-        }
-        return;
-      }
-
-      const gradesToSave = Object.entries(selectedGrades).map(
-        ([courseId, grade]) => ({
-          course_id: parseInt(courseId),
-          student_id: user.id,
-          grade: grade,
-          updated_at: new Date().toISOString(),
-        }),
-      );
-
-      const { data: existingGrades } = await supabase
-        .from("grades")
-        .select("course_id")
-        .eq("student_id", user.id);
-
-      const existingCourseIds = new Set(
-        existingGrades?.map((g) => g.course_id.toString()) || [],
-      );
-
-      const updates = gradesToSave.filter((grade) =>
-        existingCourseIds.has(grade.course_id.toString()),
-      );
-      const inserts = gradesToSave.filter(
-        (grade) => !existingCourseIds.has(grade.course_id.toString()),
-      );
-
-      for (const update of updates) {
-        const { error } = await supabase
-          .from("grades")
-          .update({
-            grade: update.grade,
-            updated_at: update.updated_at,
-          })
-          .eq("course_id", update.course_id)
-          .eq("student_id", user.id);
-
-        if (error) throw error;
-      }
-
-      if (inserts.length > 0) {
-        const { error } = await supabase.from("grades").insert(inserts);
-        if (error) throw error;
-      }
-
-      const selectedCourseIds = Object.keys(selectedGrades);
-      const gradesToDelete =
-        existingGrades?.filter(
-          (grade) => !selectedCourseIds.includes(grade.course_id.toString()),
-        ) || [];
-
-      for (const gradeToDelete of gradesToDelete) {
-        const { error } = await supabase
-          .from("grades")
-          .delete()
-          .eq("course_id", gradeToDelete.course_id)
-          .eq("student_id", user.id);
-
-        if (error) throw error;
-      }
-
-      setHasUnsavedChanges(false);
-      setLastSaved(new Date());
-
-      // Show different messages for manual vs auto-save
-      if (isAutoSave) {
-        toast.success("Grades auto-saved successfully!", { duration: 2000 });
-      } else {
-        toast.success("Grades saved successfully!");
-      }
-    } catch (_error) {
-      if (!isAutoSave) {
-        toast.error("Failed to save grades. Please try again.");
-      } else {
-        toast.error("Auto-save failed. Your changes are still unsaved.", {
-          duration: 3000,
-        });
-      }
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const calculateGPA = () => {

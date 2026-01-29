@@ -12,13 +12,19 @@ export const createClient = (request: NextRequest) => {
     },
   });
 
-  const _supabase = createServerClient(supabaseUrl!, supabaseKey!, {
+  const supabase = createServerClient(supabaseUrl!, supabaseKey!, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, _options }) =>
+      setAll(
+        cookiesToSet: {
+          name: string;
+          value: string;
+          options?: Record<string, unknown>;
+        }[],
+      ) {
+        cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
         supabaseResponse = NextResponse.next({
@@ -31,5 +37,5 @@ export const createClient = (request: NextRequest) => {
     },
   });
 
-  return supabaseResponse;
+  return { supabaseResponse, supabase };
 };
